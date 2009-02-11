@@ -1,8 +1,11 @@
 
-#include <boost/bind.hpp>
+#include <iostream>
 
-#include <irc/message.h>
-#include <irc/client.h>
+#include <boost/bind.hpp>
+#include <boost/algorithm/string.hpp>
+
+#include "message.h"
+#include "client.h"
 
 namespace weberknecht {
    namespace irc {
@@ -18,6 +21,7 @@ namespace weberknecht {
            socket_( io )
       {}
 
+      
       int client::addMsgHandler( const std::string& command,
                                msgHandler_fun handler,
                                int priority )
@@ -27,6 +31,7 @@ namespace weberknecht {
          msgHandler newHandler( 0,
                                 handler,
                                 priority );
+
          std::list<msgHandler>& l( msgHandler_[command] );
 
          l.push_back( newHandler );
@@ -165,6 +170,7 @@ namespace weberknecht {
       {
          if( !error )
          {
+            std::cout << out_.front();
             out_.pop_front();
             if( !out_.empty() )
             {
@@ -183,6 +189,29 @@ namespace weberknecht {
          {
             close();
          }
+      }
+      
+      client & operator<<( client& c, const message& m )
+      {
+         std::string msg;
+         if( m.prefix_.length() != 0 )
+            msg += m.prefix_ + " ";
+         msg += m.command_ + " " ;
+         for( size_t i = 0; i < m.numParams_; ++i )
+         {
+            msg += " ";
+            if( boost::algorithm::contains( m.params_[i], " " ) )
+               msg += ":";
+            msg += m.params_[i];
+         }
+         msg += "\r\n";
+
+         c.send( msg );
+         return c;
+      }
+      client & operator>>( client& c,       message& m )
+      {
+         return c;
       }
 
 

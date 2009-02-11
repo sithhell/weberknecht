@@ -4,4 +4,5 @@ project(weberknecht)
 add_subdirectory(src)
 
 include_directories(${WEBERKNECHT_SOURCE_DIR}/src/)
+
 link_directories(${WEBERKNECHT_SOURCE_DIR}/src/irc)

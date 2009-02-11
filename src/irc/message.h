@@ -25,13 +25,12 @@ namespace weberknecht {
                   size_t                         numParams()       const;
             const std::string&                   param( size_t i ) const;
                   std::string&                   param( size_t i );
+                  void                           addParam( const std::string& param );
             
             // TODO: implement with boost::spring
             bool parse( char nextChar );
 
             void reset();
-
-            static std::string* optional;
 
          private:
             std::string prefix_;
@@ -52,17 +51,18 @@ namespace weberknecht {
                _endMessage
             } parseState_;
 
-            friend std::ostream& operator<< ( std::ostream& os, message& m );
+            friend std::ostream& operator<< ( std::ostream& os, const message& m );
             // TODO implement!
-            friend std::istream& operator>> ( std::istream& is, message& m );
+            friend std::istream& operator>> ( std::istream& is,       message& m );
 
-            friend client& operator<< ( client& c, message& m );
+            friend client& operator<< ( client& c, const message& m );
             // TODO implement!
-            friend client& operator>> ( client& c, message& m );
+            friend client& operator>> ( client& c,       message& m );
       };
 
       // Message creation functions
       //  -- all possible IRC commands are listed here
+      // TODO: handle optional parameter
 
       // Connection Registration
       const message PASS    ( const std::string& password );

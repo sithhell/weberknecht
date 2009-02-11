@@ -10,7 +10,7 @@
 #include <boost/asio.hpp>
 #include <boost/unordered_map.hpp>
 
-#include <irc/message.h>
+#include "message.h"
 
 namespace weberknecht {
    namespace irc {
@@ -93,6 +93,9 @@ namespace weberknecht {
             // TODO: introduce some smart pointer magic here
             boost::unordered_map<std::string, std::list<msgHandler>, boost::hash<std::string> >
                msgHandler_;
+
+            friend client & operator<<( client& c, const message& m );
+            friend client & operator>>( client& c,       message& m );
       };
    } // end irc
 } // end weberknecht

@@ -1,5 +1,8 @@
 
-#include <irc/message.h>
+#include <boost/bind.hpp>
+#include <boost/algorithm/string.hpp>
+
+#include "message.h"
 
 namespace weberknecht {
    namespace irc {
@@ -60,6 +63,13 @@ namespace weberknecht {
          assert( i < 15 );
 
          return params_[0];
+      }
+      
+      void message::addParam( const std::string& param )
+      {
+         assert( numParams_ < 15 );
+
+         params_[numParams_++] = param;
       }
 
       bool message::parse( char nextChar )
@@ -159,8 +169,6 @@ namespace weberknecht {
          trailing_ = false;
       }
 
-      std::string* message::optional = NULL;
-      
       // Connection Registration
       const message PASS    ( const std::string& password ) 
       {
@@ -170,16 +178,21 @@ namespace weberknecht {
 
       const message NICK    ( const std::string& nick )
       {
-         // TODO: complete!
-         return message();
+         message m( "NICK" );
+         m.addParam( nick );
+         return m;
       }
 
       const message USER    ( const std::string& user,
                               const std::string& mode,
                               const std::string& realname )
       {
-         // TODO: complete!
-         return message();
+         message m( "USER" );
+         m.addParam(  user );
+         m.addParam( mode );
+         m.addParam( "*" );
+         m.addParam( realname );
+         return m;
       }
 
       const message OPER    ( const std::string& name, 
@@ -223,8 +236,9 @@ namespace weberknecht {
       const message JOIN    ( const std::string& channel, 
                               const std::string& key )
       {
-         // TODO: complete!
-         return message();
+         message m( "JOIN" );
+         m.addParam( channel );
+         return m;
       }
 
       const message PART    ( const std::string& channel,
@@ -417,10 +431,11 @@ namespace weberknecht {
       }
 
       const message PONG( const std::string& server1,
-                          const std::string& server2 )
+                          const std::string& /*server2*/ )
       {
-         // TODO: complete!
-         return message();
+         message m( "PONG" );
+         m.addParam( server1 );
+         return m;
       }
 
       const message ERROR( const std::string& error )
@@ -485,16 +500,20 @@ namespace weberknecht {
          return message();
       }
       
-      std::ostream& operator<< ( std::ostream& os, message& m )
+      std::ostream& operator<< ( std::ostream& os, const message& m )
       {
-         os << m.prefix_ << " " << m.command_ << " ";
+         if ( m.prefix_.length() != 0 )
+            os << m.prefix_ << " ";
+         os << m.command_ << " ";
          for( size_t i = 0; i < m.numParams_; ++i )
          {
             os << " ";
-            if( boost::algorithm::contains( params_[i], " " ) )
+            if( boost::algorithm::contains( m.params_[i], " " ) )
                os << ":";
             os << m.params_[i];
          }
+
+         return os;
       }
       
       std::istream& operator>> ( std::istream& is, message& m )
