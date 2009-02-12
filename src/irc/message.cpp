@@ -1,8 +1,12 @@
 
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/spirit/include/classic_core.hpp>
+#include <boost/spirit/actor/increment_actor.hpp>
 
 #include "message.h"
+
+using namespace BOOST_SPIRIT_CLASSIC_NS;
 
 namespace weberknecht {
    namespace irc {
@@ -11,9 +15,7 @@ namespace weberknecht {
          : prefix_(),
            command_(),
            numParams_( 0 ),
-           params_(),
-           trailing_( false ),
-           parseState_( _newMessage )
+           params_()
       {}
       
       message::message( const std::string& command,
@@ -21,9 +23,7 @@ namespace weberknecht {
          : prefix_(),
            command_( command ),
            numParams_( numParams ),
-           params_(),
-           trailing_( false ),
-           parseState_( _newMessage )
+           params_()
       {}
 
       const std::string& message::prefix() const
@@ -69,105 +69,59 @@ namespace weberknecht {
       {
          assert( numParams_ < 15 );
 
-         params_[numParams_++] = param;
+         params_.push_back(param);
+         ++numParams_;
       }
 
-      bool message::parse( char nextChar )
+      bool message::parseNew( const std::string& m )
       {
-         switch( parseState_ )
-         {
-            case _newMessage:
-               reset();
-               if( nextChar == ':' )
-                  parseState_ = _prefix;
-               else
-               {
-                  command_.push_back( nextChar );
-                  parseState_ = _command;
-               }
-               return false;
-            case _prefix:
-               if( nextChar == ' ' )
-                  parseState_ = _prefix_space;
-               else
-                  prefix_.push_back( nextChar );
-               return false;
-            case _prefix_space:
-               if( nextChar != ' ' )
-               {
-                  parseState_ = _command;
-                  command_.push_back( nextChar );
-               }
+         /*boost::function<void (char const*, char const*)>
+            prefix_cb = boost::bind( &message::set_prefix, this, _1, _2 ),
+            command_cb = boost::bind( &message::set_command, this, _1, _2 ),
+            param_cb = boost::bind( &message::add_param, this, _1, _2 );*/
 
-               return false;
-            case _command:
-               if( nextChar == ' ' )
-                  parseState_ = _param_space;
-               else
-                  command_.push_back( nextChar );
+         rule<> start, prefix, command, params, trailing, middle, space, nospcrlfcl;
+         
+         space = +ch_p( ' ' );
+         nospcrlfcl = range_p( 0x01, 0x09 ) | range_p( 0x0B, 0x0C ) | range_p( 0x0E, 0x1F ) | range_p( 0x21, 0x39 ) | range_p( 0x3B, 0xFF );
 
-               return false;
-            case _param_space:
-               if( nextChar == '\r' )
-               {
-                  parseState_ = _endMessage;
-                  return false;
-               }
-               if( nextChar != ' ' )
-               {
-                  if( nextChar == ':' )
-                     trailing_ = true;
-                  else
-                     params_[numParams_].push_back( nextChar );
+         start = !( ch_p(':') >> prefix >> space ) >> command >> params >> ch_p('\r');
 
-                  parseState_ = _param;
-               }
+         prefix = (+nospcrlfcl)[assign_a( prefix_ )];
 
-               return false;
-            case _param:
-               if( nextChar == '\r')
-               {
-                     ++numParams_;
-                  parseState_ = _endMessage;
-                  return false;
-               }
-               if( nextChar == ' ' && !trailing_ )
-               {
-                  ++numParams_;
-                  assert( numParams_ < 15 );
-                  trailing_ = false;
-                  parseState_ = _param_space;
-                  return false;
-               }
+         command = (+( alpha_p ) | ( digit_p >> digit_p >> digit_p ))[assign_a( command_ )];
 
-               params_[numParams_].push_back( nextChar );
+         params = space >> !( (ch_p( ':' ) >> trailing ) | ( middle >> params ) );
 
-               return false;
-            case _endMessage:
-               if( nextChar == '\n' )
-               {
-                  parseState_ = _newMessage;
-                  return true;
-               }
-               parseState_ = _param_space;
-               trailing_ = false;
-               return false;
-            default:
-               break;
-         }
-         return false;
+         trailing = ( +( nospcrlfcl | ch_p( ' ' ) | ch_p( ':' ) ) )[push_back_a( params_ )][increment_a( numParams_ )];
+
+         middle = ( nospcrlfcl >> *( nospcrlfcl | ch_p( ':' ) ) )[push_back_a( params_ )][increment_a( numParams_ )];
+
+         return parse( m.c_str(), start ).full;
       }
 
       void message::reset()
       {
          prefix_.clear();
          command_.clear();
-         params_ = boost::array<std::string, 15>();
+         //params_ = boost::array<std::string, 15>();
 
          numParams_ = 0;
-         parseState_ = _newMessage;
-         trailing_ = false;
       }
+      
+      /*void message::set_prefix( char const* first, char const* last )
+      {
+         prefix_ = std::string( first, last );
+      }
+      void message::set_command( char const* first, char const* last )
+      {
+         command_ = std::string( first, last );
+      }
+      void message::add_param( char const* first, char const* last )
+      {
+         assert( numParams_ < 15 );
+         params_[numParams_++] = std::string( first, last );
+      }*/
 
       // Connection Registration
       const message PASS    ( const std::string& password ) 
@@ -188,7 +142,7 @@ namespace weberknecht {
                               const std::string& realname )
       {
          message m( "USER" );
-         m.addParam(  user );
+         m.addParam( user );
          m.addParam( mode );
          m.addParam( "*" );
          m.addParam( realname );

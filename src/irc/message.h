@@ -3,7 +3,7 @@
 #define IRC_MESSAGE_H
 
 #include <string>
-#include <boost/array.hpp>
+#include <vector>
 
 namespace weberknecht {
    namespace irc {
@@ -27,8 +27,7 @@ namespace weberknecht {
                   std::string&                   param( size_t i );
                   void                           addParam( const std::string& param );
             
-            // TODO: implement with boost::spring
-            bool parse( char nextChar );
+            bool parseNew( const std::string& m );
 
             void reset();
 
@@ -37,19 +36,12 @@ namespace weberknecht {
             std::string command_;
 
             size_t numParams_;
-            boost::array<std::string, 15> params_;
+            std::vector<std::string> params_;
 
-            // intern parse state variables
-            bool trailing_;
-            enum {
-               _newMessage,
-               _prefix,
-               _prefix_space,
-               _command,
-               _param_space,
-               _param,
-               _endMessage
-            } parseState_;
+            // private methods for parsing
+            void set_prefix( char const* first, char const* last );
+            void set_command( char const* first, char const* last );
+            void add_param( char const* first, char const* last );
 
             friend std::ostream& operator<< ( std::ostream& os, const message& m );
             // TODO implement!
@@ -84,7 +76,7 @@ namespace weberknecht {
 
       //Channel Operations
       const message JOIN    ( const std::string& channel, 
-                              const std::string& key );
+                              const std::string& key = "" );
       const message PART    ( const std::string& channel,
                               const std::string& message );
       const message MODE    ( const std::string& channel,
@@ -145,7 +137,7 @@ namespace weberknecht {
       const message PING    ( const std::string& server1, 
                               const std::string& server2 );
       const message PONG    ( const std::string& server1,
-                              const std::string& server2 );
+                              const std::string& server2 = "" );
       const message ERROR   ( const std::string& error );
 
       // Optional Features

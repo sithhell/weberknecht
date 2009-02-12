@@ -105,18 +105,19 @@ namespace weberknecht {
       {
          if( !error )
          {
-            boost::asio::async_read( socket_,
-                                     boost::asio::buffer(buf_),
-                                     boost::bind( &client::receive_handler, 
-                                                  this,
-                                                  boost::asio::placeholders::error, 
-                                                  boost::asio::placeholders::bytes_transferred ) );
+            boost::asio::async_read_until( socket_,
+                                           buf_, boost::regex("\r\n$"),
+                                           boost::bind( &client::receive_handler, 
+                                                        this,
+                                                        boost::asio::placeholders::error, 
+                                                        boost::asio::placeholders::bytes_transferred ) );
 
-            std::list<msgHandler> l = msgHandler_["connected"];
+            std::list<msgHandler>& l ( msgHandler_["connected"] );
             std::list<msgHandler>::iterator it;
+            message empty;
             for( it = l.begin(); it != l.end(); ++it )
             {
-               (*it)( serverMsg_ );
+               if( (*it)( empty ) ) break;
             }
          }
          else if( endpoint_iterator != tcp::resolver::iterator() )
@@ -136,29 +137,39 @@ namespace weberknecht {
       {
          if( !error )
          {
-            if( serverMsg_.parse( buf_[0] ) )
+            std::istream buf_stream( &buf_ );
+            std::string next;
+            while( std::getline( buf_stream, next ) )
             {
-               std::list<msgHandler> l;
-               std::list<msgHandler>::iterator it;
-               
-               l = msgHandler_["all"];
-               for( it = l.begin(); it != l.end(); ++it )
+               message m;
+               if( m.parseNew( next ) )
                {
-                  (*it)( serverMsg_ );
-               }
-               
-               l = msgHandler_[serverMsg_.command()];
-               for( it = l.begin(); it != l.end(); ++it )
-               {
-                  (*it)( serverMsg_ );
+                  {
+                     std::list<msgHandler>& l( msgHandler_["all"] );
+                     std::list<msgHandler>::iterator it;
+                     
+                     for( it = l.begin(); it != l.end(); ++it )
+                     {
+                        if( (*it)( m ) ) break;;
+                     }
+                  }
+                  {
+                     std::list<msgHandler>& l( msgHandler_[m.command()] );
+                     std::list<msgHandler>::iterator it;
+                     
+                     for( it = l.begin(); it != l.end(); ++it )
+                     {
+                        if( (*it)( m ) ) break;;
+                     }
+                  }
                }
             }
-            boost::asio::async_read( socket_,
-                                     boost::asio::buffer(buf_),
-                                     boost::bind( &client::receive_handler,
-                                                  this,
-                                                  boost::asio::placeholders::error, 
-                                                  boost::asio::placeholders::bytes_transferred ) );   
+            boost::asio::async_read_until( socket_,
+                                           buf_, boost::regex( "\r\n$" ),
+                                           boost::bind( &client::receive_handler,
+                                                        this,
+                                                        boost::asio::placeholders::error, 
+                                                        boost::asio::placeholders::bytes_transferred ) );   
          }
          else
          {
@@ -170,7 +181,6 @@ namespace weberknecht {
       {
          if( !error )
          {
-            std::cout << out_.front();
             out_.pop_front();
             if( !out_.empty() )
             {

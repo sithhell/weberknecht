@@ -26,7 +26,7 @@ class Test
                                        this,
                                        _1 ),
                           10 );
-         c_.addMsgHandler( "004",
+         c_.addMsgHandler( "001", // registered
                           boost::bind( &Test::registered_handler,
                                        this,
                                        _1 ),
@@ -38,21 +38,22 @@ class Test
                           10 );
       }
 
+   private:
       bool connected_handler( const irc::message& m )
       {
-         c_ << irc::NICK( nick_ ) << irc::USER( nick_, "8", "/msg "+nick_+" info");
+         c_ << irc::NICK( nick_ ) << irc::USER( "knecht", "8", "/msg "+nick_+" info");
          return true;
       }
 
       bool ping_handler( const irc::message& m )
       {
-         c_ << irc::PONG( m.param( 0 ), "" );
+         c_ << irc::PONG( m.param( 0 ) );
          return true;
       }
 
       bool registered_handler( const irc::message& m )
       {
-         c_ << irc::JOIN( "#weberknecht", "" );
+         c_ << irc::JOIN( "#weberknecht" );
          return true;
       }
 
@@ -61,7 +62,6 @@ class Test
          cout << " << " << m << endl;
          return true;
       }
-   private:
 
       string nick_;
       irc::client& c_;
