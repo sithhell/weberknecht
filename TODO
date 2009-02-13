@@ -1,3 +1,33 @@
 
-To see a list do:
-$ grep -r TODO *
+General:
+   - Document the code (doxygen)
+   - make doxygen cmake target
+
+Weberknecht Module:
+   - finish basic IRC stuff
+   - add handling of channel and query messages
+   - add dynamic module loader for handling of these messages
+   - Configuration file
+
+User Modules: (priority in that order)
+   - User recogniser
+   - Admininstration module
+   - Channel statistics
+   - Quote database
+   - Facts database
+   - Link recogniser
+   - Web search ( google, imdb, ... )
+   - rss reader
+   - ...
+
+IRC module:
+   - client:
+      = call handler according to priority
+      = return valid id
+   - message:
+      = finish implementation of the IRC command generators according to RFC 1459
+
+Additional core modules:
+   - http client
+   - html parser
+   - rss parser

@@ -112,7 +112,7 @@ namespace weberknecht {
                                                         boost::asio::placeholders::error, 
                                                         boost::asio::placeholders::bytes_transferred ) );
 
-            std::list<msgHandler>& l ( msgHandler_["connected"] );
+            std::list<msgHandler>& l ( msgHandler_["000"] );
             std::list<msgHandler>::iterator it;
             message empty;
             for( it = l.begin(); it != l.end(); ++it )

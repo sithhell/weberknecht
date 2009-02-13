@@ -16,7 +16,7 @@ class Test
          : nick_( nick ),
            c_( c )
       {
-         c_.addMsgHandler( "connected",
+         c_.addMsgHandler( "000", // connected, not in RFC 1459
                           boost::bind( &Test::connected_handler,
                                        this,
                                        _1 ),
@@ -39,7 +39,7 @@ class Test
       }
 
    private:
-      bool connected_handler( const irc::message& m )
+      bool connected_handler( const irc::message& /*m*/ )
       {
          c_ << irc::NICK( nick_ ) << irc::USER( "knecht", "8", "/msg "+nick_+" info");
          return true;
@@ -51,7 +51,7 @@ class Test
          return true;
       }
 
-      bool registered_handler( const irc::message& m )
+      bool registered_handler( const irc::message& /*m*/ )
       {
          c_ << irc::JOIN( "#weberknecht" );
          return true;

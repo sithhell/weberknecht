@@ -1,0 +1,15 @@
+
+Dependencies:
+   - boost ( currently developing with version 1.36 )
+   - sqlite3
+
+HowTo build:
+cd path/to/weberknecht/
+mkdir build/
+cd build/
+cmake ..
+make
+
+HowTo run:
+<build first>
+src/weberknecht <irc.server>
