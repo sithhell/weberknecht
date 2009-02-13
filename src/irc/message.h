@@ -44,12 +44,8 @@ namespace weberknecht {
             void add_param( char const* first, char const* last );
 
             friend std::ostream& operator<< ( std::ostream& os, const message& m );
-            // TODO implement!
-            friend std::istream& operator>> ( std::istream& is,       message& m );
 
             friend client& operator<< ( client& c, const message& m );
-            // TODO implement!
-            friend client& operator>> ( client& c,       message& m );
       };
 
       // Message creation functions
@@ -126,7 +122,7 @@ namespace weberknecht {
       const message WHO     ( const std::string& mask, 
                               bool ops = false );
       const message WHOIS   ( const std::string& target,
-                              const std::string& mask );
+                              const std::string& mask = "" );
       const message WHOWAS  ( const std::string& nick,
                               const std::string& count, 
                               const std::string& target );

@@ -14,17 +14,19 @@ namespace weberknecht {
       message::message()
          : prefix_(),
            command_(),
-           numParams_( 0 ),
            params_()
-      {}
+      {
+         params_.reserve( 15 );
+      }
       
       message::message( const std::string& command,
                         size_t numParams )
          : prefix_(),
            command_( command ),
-           numParams_( numParams ),
            params_()
-      {}
+      {
+         params_.reserve( 15 );
+      }
 
       const std::string& message::prefix() const
       {
@@ -48,29 +50,28 @@ namespace weberknecht {
 
       size_t message::numParams() const
       {
-         return numParams_;
+         return params_.size();
       }
 
       const std::string& message::param( size_t i ) const
       {
          assert( i < 15 );
 
-         return params_[0];
+         return params_[i];
       }
       
       std::string& message::param( size_t i )
       {
          assert( i < 15 );
 
-         return params_[0];
+         return params_[i];
       }
       
       void message::addParam( const std::string& param )
       {
-         assert( numParams_ < 15 );
+         assert( params_.size() < 15 );
 
          params_.push_back(param);
-         ++numParams_;
       }
 
       bool message::parseNew( const std::string& m )
@@ -93,9 +94,9 @@ namespace weberknecht {
 
          params = space >> !( (ch_p( ':' ) >> trailing ) | ( middle >> params ) );
 
-         trailing = ( +( nospcrlfcl | ch_p( ' ' ) | ch_p( ':' ) ) )[push_back_a( params_ )][increment_a( numParams_ )];
+         trailing = ( +( nospcrlfcl | ch_p( ' ' ) | ch_p( ':' ) ) )[push_back_a( params_ )];
 
-         middle = ( nospcrlfcl >> *( nospcrlfcl | ch_p( ':' ) ) )[push_back_a( params_ )][increment_a( numParams_ )];
+         middle = ( nospcrlfcl >> *( nospcrlfcl | ch_p( ':' ) ) )[push_back_a( params_ )];
 
          return parse( m.c_str(), start ).full;
       }
@@ -104,24 +105,8 @@ namespace weberknecht {
       {
          prefix_.clear();
          command_.clear();
-         //params_ = boost::array<std::string, 15>();
-
-         numParams_ = 0;
+         params_.clear();
       }
-      
-      /*void message::set_prefix( char const* first, char const* last )
-      {
-         prefix_ = std::string( first, last );
-      }
-      void message::set_command( char const* first, char const* last )
-      {
-         command_ = std::string( first, last );
-      }
-      void message::add_param( char const* first, char const* last )
-      {
-         assert( numParams_ < 15 );
-         params_[numParams_++] = std::string( first, last );
-      }*/
 
       // Connection Registration
       const message PASS    ( const std::string& password ) 
@@ -252,8 +237,10 @@ namespace weberknecht {
       const message PRIVMSG ( const std::string& target,
                               const std::string& text )
       {
-         // TODO: complete!
-         return message();
+         message m( "PRIVMSG" );
+         m.addParam( target );
+         m.addParam( text );
+         return m;
       }
 
       const message NOTICE  ( const std::string& target,
@@ -356,8 +343,10 @@ namespace weberknecht {
       const message WHOIS   ( const std::string& target,
                               const std::string& mask )
       {
-         // TODO: complete!
-         return message();
+         message m( "WHOIS" );
+         m.addParam( target );
+         m.addParam( mask );
+         return m;
       }
 
       const message WHOWAS  ( const std::string& nick,
@@ -458,8 +447,8 @@ namespace weberknecht {
       {
          if ( m.prefix_.length() != 0 )
             os << m.prefix_ << " ";
-         os << m.command_ << " ";
-         for( size_t i = 0; i < m.numParams_; ++i )
+         os << m.command_;
+         for( size_t i = 0; i < m.numParams(); ++i )
          {
             os << " ";
             if( boost::algorithm::contains( m.params_[i], " " ) )
@@ -469,11 +458,5 @@ namespace weberknecht {
 
          return os;
       }
-      
-      std::istream& operator>> ( std::istream& is, message& m )
-      {
-         return is;
-      }
-
    } // end irc
 } // end weberknecht

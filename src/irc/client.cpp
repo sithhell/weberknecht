@@ -21,37 +21,57 @@ namespace weberknecht {
            socket_( io )
       {}
 
+      client::~client()
+      {
+         boost::unordered_map<std::string, std::list<msgHandler *>, 
+                              boost::hash<std::string> >::iterator 
+                                 map_it;
+         for( map_it = msgHandler_.begin(); map_it != msgHandler_.end(); ++map_it )
+         {
+            std::list<msgHandler *>::iterator list_it;
+            for( list_it = map_it->second.begin(); list_it != map_it->second.end(); ++list_it )
+            {
+               msgHandler *tmp = *list_it;
+               map_it->second.erase( list_it++ );
+               delete tmp;
+            }
+         }
+      }
       
-      int client::addMsgHandler( const std::string& command,
+      size_t client::addMsgHandler( const std::string& command,
                                msgHandler_fun handler,
                                int priority )
       {
          // TODO: - insert sorted
          //       - return proper id
-         msgHandler newHandler( 0,
-                                handler,
-                                priority );
+         msgHandler *newHandler = new msgHandler( handler,
+                                                  priority );
 
-         std::list<msgHandler>& l( msgHandler_[command] );
+         std::list<msgHandler *>& l( msgHandler_[command] );
+         std::list<msgHandler *>::iterator location;
 
-         l.push_back( newHandler );
+         location = std::find_if( l.begin(), l.end(), msgHandler::match_priority( newHandler ) );
 
-         return 0;
+         l.insert( location, newHandler );
+
+         return reinterpret_cast<size_t>( newHandler );
       }
 
       bool client::delMsgHandler( const std::string& command,
-                                 int id )
+                                 size_t id )
       {
          bool deleted( false );
          
-         std::list<msgHandler>& l( msgHandler_[command] );
-         std::list<msgHandler>::iterator it;
+         std::list<msgHandler *>& l( msgHandler_[command] );
+         std::list<msgHandler *>::iterator it;
 
          for( it = l.begin(); it != l.end(); ++it )
          {
-            if( it->id() == id )
+            if( *it == reinterpret_cast<msgHandler *>(id) )
             {
-               l.erase( it );
+               msgHandler *tmp = *it;
+               l.erase( it++ );
+               delete tmp;
                deleted = true;
             }
          }
@@ -112,13 +132,7 @@ namespace weberknecht {
                                                         boost::asio::placeholders::error, 
                                                         boost::asio::placeholders::bytes_transferred ) );
 
-            std::list<msgHandler>& l ( msgHandler_["000"] );
-            std::list<msgHandler>::iterator it;
-            message empty;
-            for( it = l.begin(); it != l.end(); ++it )
-            {
-               if( (*it)( empty ) ) break;
-            }
+            handleMsg( "000", message() );
          }
          else if( endpoint_iterator != tcp::resolver::iterator() )
          {
@@ -144,26 +158,11 @@ namespace weberknecht {
                message m;
                if( m.parseNew( next ) )
                {
-                  {
-                     std::list<msgHandler>& l( msgHandler_["all"] );
-                     std::list<msgHandler>::iterator it;
-                     
-                     for( it = l.begin(); it != l.end(); ++it )
-                     {
-                        if( (*it)( m ) ) break;;
-                     }
-                  }
-                  {
-                     std::list<msgHandler>& l( msgHandler_[m.command()] );
-                     std::list<msgHandler>::iterator it;
-                     
-                     for( it = l.begin(); it != l.end(); ++it )
-                     {
-                        if( (*it)( m ) ) break;;
-                     }
-                  }
+                  handleMsg( "all", m );
+                  handleMsg( m.command(), m );
                }
             }
+
             boost::asio::async_read_until( socket_,
                                            buf_, boost::regex( "\r\n$" ),
                                            boost::bind( &client::receive_handler,
@@ -185,7 +184,7 @@ namespace weberknecht {
             if( !out_.empty() )
             {
                // wait for two seconds
-               boost::asio::deadline_timer t( io_, boost::posix_time::seconds( 2 ) );
+               boost::asio::deadline_timer t( io_, boost::posix_time::seconds( 1 ) );
                t.wait();
 
                boost::asio::async_write( socket_,
@@ -200,14 +199,25 @@ namespace weberknecht {
             close();
          }
       }
+
+      void client::handleMsg( const std::string& command, const message& m )
+      {
+         std::list<msgHandler *>& l( msgHandler_[command] );
+         std::list<msgHandler *>::iterator it;
+         
+         for( it = l.begin(); it != l.end(); ++it )
+         {
+            if( (*(*it))( m ) ) break;;
+         }
+      }
       
       client & operator<<( client& c, const message& m )
       {
          std::string msg;
          if( m.prefix_.length() != 0 )
             msg += m.prefix_ + " ";
-         msg += m.command_ + " " ;
-         for( size_t i = 0; i < m.numParams_; ++i )
+         msg += m.command_;
+         for( size_t i = 0; i < m.numParams(); ++i )
          {
             msg += " ";
             if( boost::algorithm::contains( m.params_[i], " " ) )
@@ -219,11 +229,6 @@ namespace weberknecht {
          c.send( msg );
          return c;
       }
-      client & operator>>( client& c,       message& m )
-      {
-         return c;
-      }
-
 
    } // end irc
 } // end weberknecht

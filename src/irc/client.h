@@ -12,27 +12,37 @@
 
 #include "message.h"
 
+#define ADD_MSG_HANDLER( command, Class, Handler, priority ) \
+   c_.addMsgHandler( command,  \
+                     boost::bind( &Class::Handler, \
+                                  this, \
+                                  _1 ), \
+                                  priority );
+
 namespace weberknecht {
    namespace irc {
+
       class client
       {
          public:
-
             typedef boost::function<bool ( const message& )> msgHandler_fun;
+
 
             client( const std::string& host,
                     const std::string& port,
                     boost::asio::io_service& io );
 
+            ~client();
+
             /**
              * @return id
              */
-            int addMsgHandler( const std::string& command,
+            size_t addMsgHandler( const std::string& command,
                                msgHandler_fun handler,
                                int priority );
 
             bool delMsgHandler( const std::string& command, 
-                                int id );
+                                size_t id );
 
             void connect();
 
@@ -48,6 +58,8 @@ namespace weberknecht {
                                   size_t bytes_transferred );
             void send_handler( const boost::system::error_code& error );
 
+            void handleMsg( const std::string& command, const message& m );
+
             std::string host_;
             std::string port_;
 
@@ -60,20 +72,13 @@ namespace weberknecht {
 
             class msgHandler {
                public:
-                  msgHandler( int  id,
-                              msgHandler_fun handler,
+                  msgHandler( msgHandler_fun handler,
                               int priority)
-                     : id_( id ),
-                       handler_( handler ),
+                     : handler_( handler ),
                        priority_( priority )
                   {}
                   
-                  int id() 
-                  { 
-                     return id_;
-                  }
-                  
-                  int priority()
+                  int priority() const
                   {
                      return priority_;
                   }
@@ -82,20 +87,28 @@ namespace weberknecht {
                   {
                      return handler_( m );
                   }
+
+                  struct match_priority {
+                     match_priority( msgHandler* lhs ) : lhs_( lhs ) {}
+                     bool operator() ( msgHandler* rhs )
+                     {
+                        return lhs_->priority() < rhs->priority();
+                     }
+                     msgHandler* lhs_;
+                  };
                   
                private:
-                  int id_;
                   boost::function<bool ( const message& m )> handler_;
                   size_t priority_;
             };
 
             // TODO: introduce some smart pointer magic here
-            boost::unordered_map<std::string, std::list<msgHandler>, boost::hash<std::string> >
+            boost::unordered_map<std::string, std::list<msgHandler *>, boost::hash<std::string> >
                msgHandler_;
 
             friend client & operator<<( client& c, const message& m );
-            friend client & operator>>( client& c,       message& m );
       };
+
    } // end irc
 } // end weberknecht
 

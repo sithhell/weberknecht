@@ -4,77 +4,22 @@
 
 #include "irc/message.h"
 #include "irc/client.h"
+#include "weberknecht.h"
 
 using namespace std;
 using namespace weberknecht;
 
-class Test
-{
-   public:
-      Test( const string& nick,
-            irc::client& c )
-         : nick_( nick ),
-           c_( c )
-      {
-         c_.addMsgHandler( "000", // connected, not in RFC 1459
-                          boost::bind( &Test::connected_handler,
-                                       this,
-                                       _1 ),
-                          10 );
-         c_.addMsgHandler( "PING",
-                          boost::bind( &Test::ping_handler,
-                                       this,
-                                       _1 ),
-                          10 );
-         c_.addMsgHandler( "001", // registered
-                          boost::bind( &Test::registered_handler,
-                                       this,
-                                       _1 ),
-                          10 );
-         c_.addMsgHandler( "all",
-                          boost::bind( &Test::default_handler,
-                                       this,
-                                       _1 ),
-                          10 );
-      }
-
-   private:
-      bool connected_handler( const irc::message& /*m*/ )
-      {
-         c_ << irc::NICK( nick_ ) << irc::USER( "knecht", "8", "/msg "+nick_+" info");
-         return true;
-      }
-
-      bool ping_handler( const irc::message& m )
-      {
-         c_ << irc::PONG( m.param( 0 ) );
-         return true;
-      }
-
-      bool registered_handler( const irc::message& /*m*/ )
-      {
-         c_ << irc::JOIN( "#weberknecht" );
-         return true;
-      }
-
-      bool default_handler( const irc::message& m )
-      {
-         cout << " << " << m << endl;
-         return true;
-      }
-
-      string nick_;
-      irc::client& c_;
-};
-
 int main( int argc, char** argv )
 {
    boost::asio::io_service io;
+   bot knecht( argv[1], "6667", io );
 
-   irc::client c( argv[1], "6667", io);
-   Test t( "testknecht", c );
+   knecht.addNick( "weberknecht" );
+   knecht.addNick( "testknecht" );
 
-   c.connect();
+   knecht.addChannel( "#weberknecht" );
+
+   knecht.connect();
 
    io.run();
 
