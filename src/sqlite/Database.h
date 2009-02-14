@@ -47,6 +47,8 @@ typedef __int64 int64_t;
 #include <stdint.h>
 #endif
 
+#include <sqlite3.h>
+
 #ifdef SQLITEW_NAMESPACE
 namespace SQLITEW_NAMESPACE {
 #endif

@@ -45,6 +45,8 @@ typedef __int64 int64_t;
 #include <stdint.h>
 #endif
 
+#include "Database.h"
+
 
 #ifdef SQLITEW_NAMESPACE
 namespace SQLITEW_NAMESPACE {

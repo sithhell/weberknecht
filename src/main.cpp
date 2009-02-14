@@ -12,16 +12,17 @@ using namespace weberknecht;
 int main( int argc, char** argv )
 {
    boost::asio::io_service io;
-   bot knecht( argv[1], "6667", io );
+   bot knecht( argv[1], "6667", "../data/weberknecht.db", io );
 
    knecht.addNick( "weberknecht" );
    knecht.addNick( "testknecht" );
 
    knecht.addChannel( "#weberknecht" );
 
-   knecht.connect();
-
-   io.run();
+   if( knecht.connect() )
+   {
+      io.run();
+   }
 
    return 0;
 }

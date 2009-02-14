@@ -10,6 +10,7 @@ namespace weberknecht {
 
    bot::bot( const std::string& host,
              const std::string& port,
+             const std::string& db,
              boost::asio::io_service& io )
       : io_( io ),
         c_( host, port, io ),
@@ -19,7 +20,8 @@ namespace weberknecht {
         real_( "/msg weberknecht info" ),
         user_( "knecht" ),
         channel_(),
-        users_( c_ )
+        db_( db ),
+        quotes_( c_, db_ )
    {
       // Register the handlers to the client
       ADD_MSG_HANDLER( "000"    , bot, connected         , std::numeric_limits<size_t>::max() )
@@ -67,9 +69,11 @@ namespace weberknecht {
       channel_.push_back( channel );
    }
 
-   void bot::connect()
+   bool bot::connect()
    {
       c_.connect();
+
+      return db_.Connected();
    }
 
    bool bot::privmsg( const irc::message& m )
@@ -101,6 +105,7 @@ namespace weberknecht {
    {
       current_nick = nick_.begin();
       std::cerr << "Connected to " << host_ << std::endl;
+      c_.nick = *current_nick;
       c_ << irc::NICK( *current_nick ) << irc::USER( user_, "8", real_ );
       return false;
    }
@@ -110,7 +115,9 @@ namespace weberknecht {
       std::cerr << "Connection registered by " << host_ << std::endl;
       std::list<std::string>::iterator it;
       for( it = channel_.begin(); it != channel_.end(); ++it )
+      {
          c_ << irc::JOIN( *it );
+      }
       return false;
    }
 
@@ -137,11 +144,13 @@ namespace weberknecht {
       if( current_nick == nick_.end() )
       {
          *current_nick += "_";
+         c_.nick = *current_nick;
          c_ << irc::NICK( *current_nick );
       }
       else
       {
          ++current_nick;
+         c_.nick = *current_nick;
          c_ << irc::NICK( *current_nick );
       }
       return false;
@@ -157,6 +166,7 @@ namespace weberknecht {
       else
       {
          ++current_nick;
+         c_.nick = *current_nick;
          c_ << irc::NICK( *current_nick );
       }
       return false;

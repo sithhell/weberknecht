@@ -1,8 +1,11 @@
 
+#include <iostream>
+
+#include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/spirit/include/classic_core.hpp>
-#include <boost/spirit/actor/increment_actor.hpp>
+#include <boost/spirit/include/classic_increment_actor.hpp>
 
 #include "message.h"
 
@@ -84,9 +87,10 @@ namespace weberknecht {
          rule<> start, prefix, command, params, trailing, middle, space, nospcrlfcl;
          
          space = +ch_p( ' ' );
-         nospcrlfcl = range_p( 0x01, 0x09 ) | range_p( 0x0B, 0x0C ) | range_p( 0x0E, 0x1F ) | range_p( 0x21, 0x39 ) | range_p( 0x3B, 0xFF );
+         //nospcrlfcl = range_p( 0x01, 0x09 ) | range_p( 0x0B, 0x0C ) | range_p( 0x0E, 0x1F ) | range_p( 0x21, 0x39 ) | range_p( 0x3B, 0xFF );
+         nospcrlfcl = ~ch_p( 0x0A ) & ~ch_p( 0x0D ) & ~ch_p( 0x20 ) & ~ch_p( 0x3A );
 
-         start = !( ch_p(':') >> prefix >> space ) >> command >> params >> ch_p('\r');
+         start = !( ch_p( ':' ) >> prefix >> space ) >> command >> params >> ch_p( '\r' );
 
          prefix = (+nospcrlfcl)[assign_a( prefix_ )];
 

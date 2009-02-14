@@ -9,7 +9,8 @@
 
 #include "irc/client.h"
 #include "irc/message.h"
-#include "userdb.h"
+#include "sqlite/Database.h"
+#include "quotes.h"
 
 namespace weberknecht {
 
@@ -17,6 +18,7 @@ namespace weberknecht {
       public:
          bot( const std::string& host, 
               const std::string& port,
+              const std::string& db,
               boost::asio::io_service& io );
 
          ~bot();
@@ -26,7 +28,9 @@ namespace weberknecht {
          void setUsername( const std::string& user );
          void addChannel( const std::string& channel );
 
-         void connect();
+         bool setDatabase( const std::string& database );
+
+         bool connect();
 
       private:
          boost::asio::io_service& io_;
@@ -40,7 +44,9 @@ namespace weberknecht {
          std::string user_;
          std::list<std::string> channel_;
 
-         userdb users_;
+         Database db_;
+
+         quotes quotes_;
 
          bool privmsg( const irc::message& m );
 

@@ -1,6 +1,6 @@
 
-#ifndef USER_H
-#define USER_H
+#ifndef USERDB_H
+#define USERDB_H
 
 #include <boost/unordered_map.hpp>
 

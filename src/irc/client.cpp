@@ -3,6 +3,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "message.h"
 #include "client.h"
@@ -126,7 +127,7 @@ namespace weberknecht {
          if( !error )
          {
             boost::asio::async_read_until( socket_,
-                                           buf_, boost::regex("\r\n$"),
+                                           buf_, boost::regex( "\r\n$" ),
                                            boost::bind( &client::receive_handler, 
                                                         this,
                                                         boost::asio::placeholders::error, 
@@ -156,7 +157,7 @@ namespace weberknecht {
             while( std::getline( buf_stream, next ) )
             {
                message m;
-               if( m.parseNew( next ) )
+               if( m.parseNew( boost::lexical_cast<std::string>( next.c_str() ) ) )
                {
                   handleMsg( "all", m );
                   handleMsg( m.command(), m );

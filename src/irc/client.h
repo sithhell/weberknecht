@@ -48,6 +48,8 @@ namespace weberknecht {
 
             void disconnect();
 
+            std::string nick;
+
          private:
             void send( const std::string& msg );
             void close();
@@ -69,6 +71,7 @@ namespace weberknecht {
             std::deque<std::string> out_;
 
             boost::asio::streambuf buf_;
+            //boost::asio::streambuf buf_;
 
             class msgHandler {
                public:
