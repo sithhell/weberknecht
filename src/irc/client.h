@@ -95,7 +95,7 @@ namespace weberknecht {
                      match_priority( msgHandler* lhs ) : lhs_( lhs ) {}
                      bool operator() ( msgHandler* rhs )
                      {
-                        return lhs_->priority() < rhs->priority();
+                        return lhs_->priority() > rhs->priority();
                      }
                      msgHandler* lhs_;
                   };

@@ -18,6 +18,7 @@ int main( int argc, char** argv )
    knecht.addNick( "testknecht" );
 
    knecht.addChannel( "#weberknecht" );
+   knecht.addChannel( "#moscher" );
 
    if( knecht.connect() )
    {

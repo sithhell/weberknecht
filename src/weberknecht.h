@@ -11,6 +11,7 @@
 #include "irc/message.h"
 #include "sqlite/Database.h"
 #include "quotes.h"
+#include "words.h"
 
 namespace weberknecht {
 
@@ -46,7 +47,7 @@ namespace weberknecht {
 
          Database db_;
 
-         quotes quotes_;
+         words words_;
 
          bool privmsg( const irc::message& m );
 

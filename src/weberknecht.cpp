@@ -21,7 +21,7 @@ namespace weberknecht {
         user_( "knecht" ),
         channel_(),
         db_( db ),
-        quotes_( c_, db_ )
+        words_( c_, db_ )
    {
       // Register the handlers to the client
       ADD_MSG_HANDLER( "000"    , bot, connected         , std::numeric_limits<size_t>::max() )

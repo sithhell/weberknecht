@@ -7,13 +7,12 @@ Weberknecht Module:
    - Configuration file
 
 User Modules: (priority in that order)
-   - User recogniser
-   - Channel statistics
-   - Quote database
-   - Facts database
+   - Words database
    - Link recogniser
    - Web search ( google, imdb, ... )
    - rss reader
+   - User recogniser
+   - Channel statistics
    - Admininstration module
    - ...
 

@@ -4,8 +4,6 @@
 
 #include <boost/spirit/include/classic_core.hpp>
 
-
-
 namespace weberknecht {
    using namespace BOOST_SPIRIT_CLASSIC_NS;
 
@@ -39,6 +37,8 @@ namespace weberknecht {
    {
       return append_action<T>( ref );
    }
+
+   const rule<> char_p = ~ch_p( 0x0A ) & ~ch_p( ' ' ) & ~ch_p( 0x0D );
 
 } // end weberknecht
 

@@ -9,17 +9,17 @@ namespace weberknecht {
 
    class quotes {
       public:
-         quotes( irc::client& c, Database& db );
+         quotes( Database& db );
          ~quotes();
 
+         std::string next( const std::string& channel, const std::string& text );
+         std::string add( const std::string& channel, const std::string& text );
+
       private:
-         irc::client& c_;
          Query quote_;
 
-         long numResults_;
-         long currResult_;
-
-         bool quotes_handler( const irc::message& m );
+         std::vector<std::string> result_;
+         size_t currResult_;
    };
 
 } // end namespace
